@@ -12,4 +12,4 @@ build/
 .swiftpm/
 
 # The ns engine is downloaded by Scripts/fetch-engine.sh, never committed.
-Engine/
+/Engine/
