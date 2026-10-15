@@ -1,8 +1,9 @@
 # Publishes a GitHub release when a version tag (v0.1.0, ...) is pushed:
 # the ad-hoc signed app as NetScanner-<version>.zip, with that version's
 # CHANGELOG section as the notes. The Homebrew cask in
-# Criseda/homebrew-tap points at this zip; bump its version and sha256
-# (printed in the job log and the release notes) after each release.
+# Criseda/homebrew-tap points at this zip. The tap's daily Bump workflow
+# notices the new release and opens a PR with the cask's new version and
+# sha256 within a day; review and merge it there.
 name: Release
 
 on:

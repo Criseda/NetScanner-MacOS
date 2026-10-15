@@ -233,8 +233,10 @@ Like the engine repo, every user-facing change gets an entry under
   tag runs `.github/workflows/release.yml`, which checks the tag
   against `MARKETING_VERSION` and a `## <version>` CHANGELOG section,
   builds with `Scripts/package-release.sh` and publishes
-  `NetScanner-<version>.zip`; then bump the cask's `version` and
-  `sha256`. The app is ad-hoc signed, not notarized (no paid developer
+  `NetScanner-<version>.zip`. Within a day the tap's daily Bump
+  workflow (`.github/workflows/bump.yml`) sees the release through
+  livecheck and opens a PR with the cask's new `version` and `sha256`;
+  review and merge it. The app is ad-hoc signed, not notarized (no paid developer
   account yet), so the official `homebrew/cask` tap will not take it
   and users allow the first launch in Privacy & Security.
 - **Developer ID** (later, needs a paid developer account): sign,
