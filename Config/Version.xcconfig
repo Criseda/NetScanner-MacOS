@@ -1,0 +1,14 @@
+// Every version in the repo, in one place. Xcode reads this file as the
+// project's base configuration, and Scripts/fetch-engine.sh reads it
+// too, so nothing else may restate these values.
+
+// The app release (CFBundleShortVersionString / CFBundleVersion).
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
+
+// The bundled ns engine: its NetScanner release tag, and the SHA-256 of
+// that release's macos-arm64.zip and macos-x86_64.zip. fetch-engine.sh
+// refuses a download that does not match.
+NETSCANNER_ENGINE_VERSION = v1.6.0
+NETSCANNER_ENGINE_SHA256_ARM64 = a74a68164be864834c254f83ea80db47dd7b7e9e60e385bc3095804f8164c893
+NETSCANNER_ENGINE_SHA256_X86_64 = 400e27a3a6d1230ae586b5831880e35336cdd63aec74dfca02448aa3c52d2a57

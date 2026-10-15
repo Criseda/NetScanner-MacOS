@@ -1,0 +1,37 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.16000,0.56000,1.00000,1.00000",
+      "display-p3:0.04000,0.22000,0.70000,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "nodes.svg",
+          "name" : "nodes"
+        },
+        {
+          "glass" : true,
+          "image-name" : "rings.svg",
+          "name" : "rings"
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.4
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [
+      "macOS"
+    ]
+  }
+}
