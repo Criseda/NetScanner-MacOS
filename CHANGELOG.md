@@ -21,4 +21,4 @@ First version of the native macOS app:
   table however the app is signed: macOS 27 hides that table from the
   engine but not from the app, so the app reads it and hands it to the
   engine (`--neighbor-table=parent`).
-- Bundles NetScanner v1.6.0 as a universal binary.
+- Bundles NetScanner v1.7.0 as a universal binary.
