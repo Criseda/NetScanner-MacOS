@@ -8,5 +8,11 @@
 <dict>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>NetScanner looks for devices on your local network and checks which services they offer.</string>
+	<!-- Advertised and browsed at launch to ask for Local Network access
+	     before the first scan (LocalNetworkPermission in NetScannerKit). -->
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_netscanner._tcp</string>
+	</array>
 </dict>
 </plist>

@@ -15,16 +15,9 @@ struct PortScanView: View {
         PortTable(model: model, columns: $columns)
             .overlay { emptyState }
             .overlay(alignment: .bottom) {
-                // Animated on its own, so results and empty states swap instantly.
-                ZStack {
-                    if case .running(let progress) = model.activity.state {
-                        ScanStatusCapsule(
-                            progress: progress, target: model.scannedHost?.description ?? "")
-                        .padding(.bottom, 16)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                }
-                .animation(.smooth, value: model.activity.isRunning)
+                ScanStatusOverlay(
+                    activity: model.activity, target: model.scannedHost?.description ?? "",
+                    isWaitingForPermission: app.isWaitingForLocalNetwork)
             }
             .navigationTitle("Port Scan")
             .navigationSubtitle(subtitle)

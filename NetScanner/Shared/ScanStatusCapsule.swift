@@ -9,10 +9,17 @@ struct ScanStatusCapsule: View {
     let progress: ScanProgress?
     /// What is being scanned, e.g. "192.168.1.0/24".
     let target: String
+    /// The scan is held until the user answers the Local Network prompt.
+    var waitingForPermission = false
 
     var body: some View {
         HStack(spacing: 10) {
-            if let progress {
+            if waitingForPermission {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Waiting for Local Network access…")
+                    .lineLimit(1)
+            } else if let progress {
                 ProgressView(value: progress.fraction)
                     .progressViewStyle(.circular)
                     .controlSize(.small)
@@ -42,6 +49,7 @@ struct ScanStatusCapsule: View {
 #Preview {
     VStack(spacing: 20) {
         ScanStatusCapsule(progress: nil, target: "192.168.1.0/24")
+        ScanStatusCapsule(progress: nil, target: "192.168.1.0/24", waitingForPermission: true)
         ScanStatusCapsule(
             progress: ScanProgress(phase: .sweep, done: 120, total: 254), target: "192.168.1.0/24")
         ScanStatusCapsule(

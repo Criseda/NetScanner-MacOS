@@ -62,3 +62,19 @@ struct EngineUnavailableView: View {
         }
     }
 }
+
+/// Shown instead of Discovery when the user declined Local Network
+/// access: without it, a scan can only ever find this Mac.
+struct LocalNetworkDeniedView: View {
+    var body: some View {
+        ContentUnavailableView {
+            Label("Local Network Access Needed", systemImage: "lock.shield")
+        } description: {
+            Text("NetScanner needs permission to find devices on your network. Turn on NetScanner in Privacy & Security ▸ Local Network, then come back.")
+        } actions: {
+            Button("Open Privacy Settings", action: SystemActions.openLocalNetworkSettings)
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+        }
+    }
+}

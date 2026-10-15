@@ -56,19 +56,56 @@ to try an unreleased engine.
   that identifier. Do not drop the pre-signing.
 - **Local Network privacy.** The app is the responsible process for
   `ns`, so `NSLocalNetworkUsageDescription` in `Config/Info.plist` is
-  what makes the system ask the user once. Without permission a scan
-  finds only this Mac; the empty state explains that and links to
-  Privacy & Security.
-- **ARP table from a child of an app (open issue).** On macOS 27 the ARP
-  table comes back empty when `ns` is started by an app rather than a
-  shell, so MAC addresses, manufacturers and the ARP harvest of quiet
-  hosts are missing in the app (verified: correct `--resolve` arguments,
-  `host_detail` events arrive with `mac: null`; a shell in between and
-  dropping the hardened runtime do not help). The engine's `build.zig`
-  documents the same limit. Fixing it needs engine-side work, for
-  example an engine library the app links so the read happens in the
-  app's own process, or a supported API; evaluate in the NetScanner
-  repo, not with workarounds here.
+  what makes the system ask the user once. Until they answer, local
+  traffic fails silently, so a scan that is the app's first network use
+  finds only this Mac. To avoid that, `LocalNetworkPermission` (in
+  NetScannerKit) runs at launch and whenever the app becomes active
+  without access: it advertises and browses a private Bonjour service
+  (`_netscanner._tcp`, listed under `NSBonjourServices`), which shows
+  the prompt and reports granted, denied or undetermined. Scans wait
+  for that answer (the status capsule says so); a denial blocks
+  Discovery with a screen that links to Privacy & Security. Port scans
+  still run, since the host may be off the local network. The grant
+  belongs to the app's code signature, so a build signed differently
+  (ad-hoc vs. a team certificate) is a new app to macOS and is asked
+  again.
+- **ARP table needs a properly signed app.** On macOS 27 the kernel
+  hides the ARP table from the `sysctl(NET_RT_FLAGS, RTF_LLINFO)` dump
+  (it returns 0 bytes, with no error and nothing logged) unless the
+  process chain is trusted. Measured with a test app and the bundled
+  `ns` (October 2026):
+  - The app's **own process** can always read the table, even when it
+    is ad-hoc signed.
+  - **Children of an ad-hoc signed app** (Xcode's "Sign to Run
+    Locally", which is what `CODE_SIGN_IDENTITY = "-"` gives) always
+    get an empty table. That holds for every child: `ns` with any
+    signature, Apple's own `/usr/sbin/arp`, children started through
+    `/bin/sh` or `/usr/bin/env`, and children that disclaim
+    responsibility. This is why the app shows no MAC addresses today.
+  - **Children of a Developer ID signed, notarized app** that
+    LaunchServices started can read it. With Postman as the parent,
+    the unchanged bundled `ns -s … --resolve --json` reported 37 hosts,
+    every one with a MAC address and manufacturer, read directly and
+    through `/bin/sh`.
+  - A non-Apple binary between the responsible app and `ns` hides the
+    table again, even a Developer ID one (that is why `zig build run`
+    fails). Keep spawning `ns` directly from the app.
+  - The reader needs a reverse-DNS code identifier (`ns` keeps
+    `io.github.criseda.netscanner`; `ns`, `ns-<hash>` and the linker's
+    default all fail).
+  - Local Network permission is needed for scanning, but it does not
+    affect this: the ad-hoc app had it and still got an empty table.
+
+  So no engine change or workaround is needed: the Developer ID build
+  the Homebrew cask needs anyway should get MAC addresses as is. Still
+  to check once a certificate is available: that a Developer ID build
+  actually shows MACs (with and without notarization), . An Apple Development
+  certificate (free personal team) is **not** enough: a build signed
+  with one, launched from Finder, still got no MAC addresses (October
+  2026). If a Developer ID build still fails, fall back to
+  reading the table in the app's own process through a small C library
+  from the engine (`dump_neighbors` in `src/c/neighbors.c`), which
+  works even ad-hoc.
 - **Script sandboxing.** `ENABLE_USER_SCRIPT_SANDBOXING` is on. Build
   phases must declare their inputs and outputs, and tools that write
   temporary files next to outputs (codesign) fail inside it, which is

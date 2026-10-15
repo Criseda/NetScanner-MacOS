@@ -40,6 +40,15 @@ final class AppModel {
     let discovery: DiscoveryModel
     let portScan = PortScanModel()
 
+    /// Local Network access, from the check at launch; nil until macOS
+    /// (or the user, at the prompt) has answered.
+    private(set) var localNetworkAccess: LocalNetworkAccess?
+    private var localNetworkCheck: Task<LocalNetworkAccess, Never>?
+
+    /// A scan was requested while the Local Network check is still
+    /// waiting for the user; it starts once they answer.
+    private(set) var isWaitingForLocalNetwork = false
+
     /// Open ports from every finished port scan this session, by host.
     private var portHistory: [IPv4: [OpenPort]] = [:]
 
@@ -61,6 +70,21 @@ final class AppModel {
         }
     }
 
+    /// Asks for Local Network access before any scan does, so the
+    /// system prompt appears at launch rather than silently swallowing
+    /// the first scan. Run again whenever access is not yet granted and
+    /// the app becomes active: the user may have changed it in System
+    /// Settings meanwhile.
+    func checkLocalNetworkAccess() {
+        guard localNetworkCheck == nil, localNetworkAccess != .granted else { return }
+        let check = Task { await LocalNetworkPermission.check() }
+        localNetworkCheck = check
+        Task {
+            localNetworkAccess = await check.value
+            localNetworkCheck = nil
+        }
+    }
+
     func refreshLocalNetworks() {
         localNetworks = LocalNetworks.current()
     }
@@ -79,7 +103,9 @@ final class AppModel {
     }
 
     var canStartScan: Bool {
-        guard isEngineUsable, !activeActivity.isRunning else { return false }
+        guard isEngineUsable, !activeActivity.isRunning, !isWaitingForLocalNetwork else {
+            return false
+        }
         switch section {
         case .discovery: return (try? discovery.validatedSubnet.get()) != nil
         case .portScan: return (try? portScan.validatedOptions.get()) != nil
@@ -101,16 +127,38 @@ final class AppModel {
     }
 
     /// `confirmed` skips the question asked before very large sweeps.
+    /// Discovery is pointless without Local Network access, so it does
+    /// not start when access is denied; the screen explains why.
     func startDiscovery(confirmed: Bool = false) {
-        discovery.scan(with: engine, confirmed: confirmed) { [weak self] ip in
-            self?.portHistory[ip]
+        afterLocalNetworkCheck(skipIfDenied: true) { [self] in
+            discovery.scan(with: engine, confirmed: confirmed) { [weak self] ip in
+                self?.portHistory[ip]
+            }
         }
     }
 
+    /// Port scans run even without Local Network access: the host may be
+    /// beyond the local network.
     func startPortScan() {
-        portScan.scan(with: engine) { [weak self] host, ports in
-            self?.portHistory[host] = ports
-            self?.discovery.record(openPorts: ports, for: host)
+        afterLocalNetworkCheck(skipIfDenied: false) { [self] in
+            portScan.scan(with: engine) { [weak self] host, ports in
+                self?.portHistory[host] = ports
+                self?.discovery.record(openPorts: ports, for: host)
+            }
+        }
+    }
+
+    /// Runs `scan` now, or once the pending Local Network check answers.
+    private func afterLocalNetworkCheck(skipIfDenied: Bool, _ scan: @escaping () -> Void) {
+        guard let check = localNetworkCheck else {
+            if !(skipIfDenied && localNetworkAccess == .denied) { scan() }
+            return
+        }
+        isWaitingForLocalNetwork = true
+        Task {
+            let access = await check.value
+            isWaitingForLocalNetwork = false
+            if !(skipIfDenied && access == .denied) { scan() }
         }
     }
 

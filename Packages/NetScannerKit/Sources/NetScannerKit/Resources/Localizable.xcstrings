@@ -1,5 +1,155 @@
 {
   "sourceLanguage" : "en",
-  "strings" : {},
+  "strings" : {
+    "%@, +%lld more" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, +%2$lld more"
+          }
+        }
+      }
+    },
+    "%lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Category" : {
+
+    },
+    "Checking quiet hosts" : {
+
+    },
+    "Database" : {
+
+    },
+    "Description" : {
+
+    },
+    "Directory" : {
+
+    },
+    "DNS" : {
+
+    },
+    "Enter an IPv4 address like 192.168.1.1." : {
+
+    },
+    "Expected it at %@. Reinstall NetScanner." : {
+
+    },
+    "File sharing" : {
+
+    },
+    "Found Via" : {
+
+    },
+    "IANA Name" : {
+
+    },
+    "Identifying devices" : {
+
+    },
+    "IP Address" : {
+
+    },
+    "MAC Address" : {
+
+    },
+    "Mail" : {
+
+    },
+    "Manufacturer" : {
+
+    },
+    "Media" : {
+
+    },
+    "Messaging" : {
+
+    },
+    "Name" : {
+
+    },
+    "Network" : {
+
+    },
+    "None open" : {
+
+    },
+    "Open Ports" : {
+
+    },
+    "Port" : {
+
+    },
+    "Ports must be between 1 and 65535." : {
+
+    },
+    "Printing" : {
+
+    },
+    "Probing ports" : {
+
+    },
+    "Proxy" : {
+
+    },
+    "Remote access" : {
+
+    },
+    "Service" : {
+
+    },
+    "Smart home" : {
+
+    },
+    "Sweeping" : {
+
+    },
+    "The prefix length must be between /0 and /32." : {
+
+    },
+    "The scan engine could not be started." : {
+
+    },
+    "The scan engine is missing from the app." : {
+
+    },
+    "The scan engine reported an error." : {
+
+    },
+    "The scan engine stopped unexpectedly (status %d)." : {
+
+    },
+    "The timeout must be between 1 and 60000 ms." : {
+
+    },
+    "Too large (%@ hosts). Use a /16 or smaller." : {
+
+    },
+    "Use a port or a range, like 80 or 1-1024." : {
+
+    },
+    "Use CIDR notation, like 192.168.1.0/24." : {
+
+    },
+    "Voice & video" : {
+
+    },
+    "VPN" : {
+
+    },
+    "Web" : {
+
+    }
+  },
   "version" : "1.0"
 }

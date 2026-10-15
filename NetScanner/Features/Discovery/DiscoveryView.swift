@@ -20,16 +20,9 @@ struct DiscoveryView: View {
         )
         .overlay { emptyState }
         .overlay(alignment: .bottom) {
-            // Animated on its own, so results and empty states swap instantly.
-            ZStack {
-                if case .running(let progress) = model.activity.state {
-                    ScanStatusCapsule(
-                        progress: progress, target: model.scannedSubnet?.description ?? "")
-                    .padding(.bottom, 16)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-            .animation(.smooth, value: model.activity.isRunning)
+            ScanStatusOverlay(
+                activity: model.activity, target: model.scannedSubnet?.description ?? "",
+                isWaitingForPermission: app.isWaitingForLocalNetwork)
         }
         .navigationTitle("Discovery")
         .navigationSubtitle(subtitle)
@@ -126,7 +119,9 @@ struct DiscoveryView: View {
         if case .unavailable(let error) = app.engineStatus {
             EngineUnavailableView(error: error)
         } else if model.visibleHosts.isEmpty, !model.activity.isRunning {
-            if model.hostCount > 0 {
+            if app.localNetworkAccess == .denied {
+                LocalNetworkDeniedView()
+            } else if model.hostCount > 0 {
                 ContentUnavailableView.search(text: model.searchText)
             } else {
                 DiscoveryEmptyState(
