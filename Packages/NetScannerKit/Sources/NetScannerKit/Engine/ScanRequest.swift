@@ -10,7 +10,9 @@ public enum ScanRequest: Hashable, Sendable {
             var arguments = ["-s", options.subnet.description]
             if options.method == .ping { arguments.append("--ping") }
             if options.identifyDevices { arguments.append("--resolve") }
-            return arguments + ["--json"]
+            // The app reads the ARP table for the engine (see
+            // `NeighborTable`): macOS may hide it from `ns`.
+            return arguments + ["--json", "--neighbor-table=parent"]
 
         case .portScan(let options):
             var arguments = ["-p", options.host.description, options.ports.engineArgument]

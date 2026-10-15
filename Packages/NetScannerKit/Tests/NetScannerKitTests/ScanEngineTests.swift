@@ -74,6 +74,33 @@ struct ScanEngineTests {
         #expect(clock.now - started < .seconds(10))
     }
 
+    @Test func answersNeighborsRequestsOnStdin() async throws {
+        // The fake engine sends the reply back on stderr, and fails so
+        // that it shows up in the error.
+        let table = [NeighborEntry(ip: IPv4(10, 0, 0, 2), macAddress: "aa:bb:cc:dd:ee:ff")]
+        let engine = try fakeEngine(
+            """
+            echo '{"type":"neighbors_request","id":1}'
+            read -r reply
+            echo "$reply" >&2
+            exit 3
+            """, neighborTable: table)
+        let reply = #"{"entries":[{"ip":"10.0.0.2","mac":"aa:bb:cc:dd:ee:ff","state":"stale"}],"id":1,"type":"neighbors"}"#
+        await #expect(throws: EngineError.failed(status: 3, diagnostics: reply)) {
+            _ = try await collect(engine)
+        }
+    }
+
+    @Test func keepsNeighborsRequestsOutOfTheStream() async throws {
+        let engine = try fakeEngine(
+            """
+            echo '{"type":"neighbors_request","id":1}'
+            read -r reply
+            echo '{"type":"host","ip":"10.0.0.2","source":"arp"}'
+            """, neighborTable: [])
+        #expect(try await collect(engine) == [.hostFound(IPv4(10, 0, 0, 2), .arp)])
+    }
+
     @Test func readsTheVersion() async throws {
         let engine = try fakeEngine("echo v9.9.9")
         #expect(try await engine.version() == "v9.9.9")
@@ -90,11 +117,11 @@ struct ScanEngineTests {
         return events
     }
 
-    private func fakeEngine(_ script: String) throws -> ScanEngine {
+    private func fakeEngine(_ script: String, neighborTable: [NeighborEntry] = []) throws -> ScanEngine {
         let url = FileManager.default.temporaryDirectory
             .appending(path: "fake-ns-\(UUID().uuidString)")
         try "#!/bin/sh\n\(script)\n".write(to: url, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
-        return ScanEngine(executableURL: url)
+        return ScanEngine(executableURL: url, readNeighborTable: { neighborTable })
     }
 }

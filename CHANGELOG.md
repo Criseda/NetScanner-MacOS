@@ -17,8 +17,8 @@ First version of the native macOS app:
   finds only this Mac while the permission prompt is pending. Scans wait
   for the answer, and if access is denied, Discovery explains how to
   turn it on.
+- Shows MAC addresses, manufacturers and quiet hosts found in the ARP
+  table however the app is signed: macOS 27 hides that table from the
+  engine but not from the app, so the app reads it and hands it to the
+  engine (`--neighbor-table=parent`).
 - Bundles NetScanner v1.6.0 as a universal binary.
-
-Known issue: on macOS 27 the engine cannot read the ARP table unless
-the app is Developer ID signed, so MAC addresses and manufacturers stay
-empty in ad-hoc and Apple Development builds.

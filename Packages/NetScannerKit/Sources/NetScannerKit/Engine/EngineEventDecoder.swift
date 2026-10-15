@@ -23,6 +23,7 @@ public struct EngineEventDecoder: Sendable {
 /// keeps one forgiving decode path instead of one type per event.
 private struct RawEvent: Decodable {
     let type: String
+    let id: Int?
     let ip: String?
     let source: String?
     let hostname: String?
@@ -44,7 +45,7 @@ private struct RawEvent: Decodable {
     let message: String?
 
     enum CodingKeys: String, CodingKey {
-        case type, ip, source, hostname, mac, vendor, first, last, port, service, iana
+        case type, id, ip, source, hostname, mac, vendor, first, last, port, service, iana
         case description, category, phase, done, total, hosts, message
         case openPorts = "open_ports"
         case elapsedMs = "elapsed_ms"
@@ -90,6 +91,10 @@ private struct RawEvent: Decodable {
 
         case "error":
             return .failure(message: message ?? String(localized: "The scan engine reported an error.", bundle: .module))
+
+        case "neighbors_request":
+            guard let id else { return nil }
+            return .neighborsRequest(id: id)
 
         default:
             return nil
