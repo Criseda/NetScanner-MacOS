@@ -9,10 +9,16 @@ import Synchronization
 /// lost and the exit status is known when deciding success or failure.
 /// The pipe handlers and the termination handler run on Foundation's
 /// background queues; all shared state sits behind one mutex.
+///
+/// Requests for the ARP table (`neighbors_request`) are answered on
+/// stdin from the stdout handler, so never on the main actor; the engine
+/// waits for the answer, so nothing else is held up meanwhile.
 final class EngineRun: Sendable {
     typealias Continuation = AsyncThrowingStream<[EngineEvent], any Error>.Continuation
 
     private let process: Process
+    private let input = Pipe()
+    private let readNeighborTable: ScanEngine.NeighborTableReader
     private let continuation: Continuation
     private let state = Mutex(State())
     private let decoder = EngineEventDecoder()
@@ -32,10 +38,14 @@ final class EngineRun: Sendable {
         var finished = false
     }
 
-    init(executableURL: URL, arguments: [String], continuation: Continuation) {
+    init(
+        executableURL: URL, arguments: [String],
+        readNeighborTable: @escaping ScanEngine.NeighborTableReader, continuation: Continuation
+    ) {
         process = Process()
         process.executableURL = executableURL
         process.arguments = arguments
+        self.readNeighborTable = readNeighborTable
         self.continuation = continuation
     }
 
@@ -44,7 +54,10 @@ final class EngineRun: Sendable {
         let stderr = Pipe()
         process.standardOutput = stdout
         process.standardError = stderr
-        process.standardInput = FileHandle.nullDevice
+        process.standardInput = input
+        // Writing to an engine that already exited must fail with EPIPE,
+        // not kill the app with SIGPIPE.
+        _ = fcntl(input.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
 
         stdout.fileHandleForReading.readabilityHandler = { [self] handle in
             readStdout(handle)
@@ -61,6 +74,7 @@ final class EngineRun: Sendable {
         } catch {
             stdout.fileHandleForReading.readabilityHandler = nil
             stderr.fileHandleForReading.readabilityHandler = nil
+            try? input.fileHandleForWriting.close()
             state.withLock { $0.finished = true }
             continuation.finish(
                 throwing: EngineError.launchFailed(reason: error.localizedDescription))
@@ -81,6 +95,8 @@ final class EngineRun: Sendable {
             handle.readabilityHandler = nil
             let lastLine = state.withLock { $0.splitter.finish() }
             if let lastLine { deliver([lastLine]) }
+            // Requests come on stdout, so none can follow.
+            try? input.fileHandleForWriting.close()
             update { $0.stdoutClosed = true }
             return
         }
@@ -111,6 +127,8 @@ final class EngineRun: Sendable {
             switch decoder.decode(line) {
             case .failure(let message)?:
                 state.withLock { $0.rejection = $0.rejection ?? message }
+            case .neighborsRequest(let id)?:
+                answerNeighborsRequest(id)
             case let event?:
                 events.append(event)
             case nil:
@@ -118,6 +136,15 @@ final class EngineRun: Sendable {
             }
         }
         if !events.isEmpty { continuation.yield(events) }
+    }
+
+    /// Sends the ARP table, or why it could not be read. A failed write
+    /// means the engine is gone or stopped listening; it then reads the
+    /// table itself, so there is nothing to report.
+    private func answerNeighborsRequest(_ id: Int) {
+        let table = Result { () throws(NeighborTableError) in try readNeighborTable() }
+        let reply = NeighborsReply(id: id, table: table)
+        try? input.fileHandleForWriting.write(contentsOf: reply.line)
     }
 
     // MARK: - Completion

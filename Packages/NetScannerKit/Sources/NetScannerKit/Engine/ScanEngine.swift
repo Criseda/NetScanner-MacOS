@@ -4,12 +4,23 @@ import Foundation
 ///
 /// The engine is the single source of truth for scanning: this type only
 /// launches it with `--json`, turns its output into typed events as they
-/// arrive, and stops it when the consumer stops listening.
+/// arrive, answers its requests for the ARP table (which macOS may hide
+/// from it but not from the app), and stops it when the consumer stops
+/// listening.
 public struct ScanEngine: Sendable {
-    public let executableURL: URL
+    /// Reads the ARP table for the engine (`--neighbor-table=parent`).
+    public typealias NeighborTableReader = @Sendable () throws(NeighborTableError) -> [NeighborEntry]
 
-    public init(executableURL: URL) {
+    public let executableURL: URL
+    let readNeighborTable: NeighborTableReader
+
+    /// `readNeighborTable` answers the engine's requests for the ARP
+    /// table; it is replaceable so tests need no real network.
+    public init(
+        executableURL: URL, readNeighborTable: @escaping NeighborTableReader = NeighborTable.read
+    ) {
         self.executableURL = executableURL
+        self.readNeighborTable = readNeighborTable
     }
 
     /// Runs a scan and streams its events.
@@ -29,7 +40,7 @@ public struct ScanEngine: Sendable {
             }
             let run = EngineRun(
                 executableURL: executableURL, arguments: request.arguments,
-                continuation: continuation)
+                readNeighborTable: readNeighborTable, continuation: continuation)
             continuation.onTermination = { termination in
                 if case .cancelled = termination { run.cancel() }
             }

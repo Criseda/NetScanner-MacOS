@@ -60,6 +60,11 @@ struct EngineEventDecoderTests {
         #expect(decode(#"{"type":"error","message":"Invalid IP address"}"#) == .failure(message: "Invalid IP address"))
     }
 
+    @Test func decodesNeighborsRequests() {
+        #expect(decode(#"{"type":"neighbors_request","id":1}"#) == .neighborsRequest(id: 1))
+        #expect(decode(#"{"type":"neighbors_request"}"#) == nil)
+    }
+
     @Test(arguments: [
         "", "   ", "NetScanner: warning", "[1,2]", "{not json", #"{"type":"future_event","x":1}"#,
         #"{"type":"host","ip":"999.1.1.1"}"#, #"{"type":"summary"}"#, #"{"ip":"1.1.1.1"}"#,
@@ -92,10 +97,10 @@ struct LineSplitterTests {
 struct ScanRequestTests {
     @Test func buildsDiscoveryArguments() throws {
         let subnet = try Subnet(validating: "192.168.1.0/24")
-        #expect(ScanRequest.discovery(DiscoveryOptions(subnet: subnet)).arguments == ["-s", "192.168.1.0/24", "--resolve", "--json"])
+        #expect(ScanRequest.discovery(DiscoveryOptions(subnet: subnet)).arguments == ["-s", "192.168.1.0/24", "--resolve", "--json", "--neighbor-table=parent"])
         #expect(
             ScanRequest.discovery(DiscoveryOptions(subnet: subnet, method: .ping, identifyDevices: false)).arguments
-                == ["-s", "192.168.1.0/24", "--ping", "--json"])
+                == ["-s", "192.168.1.0/24", "--ping", "--json", "--neighbor-table=parent"])
     }
 
     @Test func buildsPortScanArguments() {

@@ -13,4 +13,8 @@ public enum EngineEvent: Hashable, Sendable {
     case portScanFinished(openPorts: [UInt16], elapsed: Duration)
     /// An input error. The engine exits with status 1 right after.
     case failure(message: String)
+    /// The engine waits for this app to send it the ARP table
+    /// (`--neighbor-table=parent`). ``ScanEngine`` answers it, so it
+    /// never reaches the scan's event stream.
+    case neighborsRequest(id: Int)
 }
