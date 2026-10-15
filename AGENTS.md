@@ -142,6 +142,7 @@ and the app target stays thin views plus `@Observable` models.
 Scripts/fetch-engine.sh                    # download the pinned ns (universal), checksum-verified
 swift test --package-path Packages/NetScannerKit
 xcodebuild -project NetScanner.xcodeproj -scheme NetScanner -configuration Debug build
+Scripts/package-release.sh                 # Release build zipped for GitHub Releases; prints its SHA-256
 ```
 
 `fetch-engine.sh --local ../NetScanner/zig-out/bin/ns` installs a locally
@@ -226,9 +227,21 @@ Like the engine repo, every user-facing change gets an entry under
 
 ## Distribution
 
-- **Homebrew cask** (first target): Developer ID signed, hardened
-  runtime, notarized and stapled `.dmg` or `.zip`. Homebrew requires
-  signed and notarized apps for new casks.
+- **Homebrew** (now): the `netscanner-app` cask in
+  [Criseda/homebrew-tap](https://github.com/Criseda/homebrew-tap), next
+  to the `netscanner` formula for the `ns` CLI. Pushing a `v<version>`
+  tag runs `.github/workflows/release.yml`, which checks the tag
+  against `MARKETING_VERSION` and a `## <version>` CHANGELOG section,
+  builds with `Scripts/package-release.sh` and publishes
+  `NetScanner-<version>.zip`; then bump the cask's `version` and
+  `sha256`. The app is ad-hoc signed, not notarized (no paid developer
+  account yet), so the official `homebrew/cask` tap will not take it
+  and users allow the first launch in Privacy & Security.
+- **Developer ID** (later, needs a paid developer account): sign,
+  notarize and staple in the release workflow, which removes the
+  Gatekeeper prompt and keeps the Local Network grant across updates.
+  The official `homebrew/cask` tap also needs notability (90 forks, 90
+  watchers or 225 stars for a self-submission).
 - **Mac App Store** (later, needs a paid developer account): requires
   App Sandbox. Open questions to verify before committing to it:
   whether a sandboxed child can read the ARP table via `sysctl`, open

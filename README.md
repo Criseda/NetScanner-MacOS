@@ -15,6 +15,23 @@ shows its results in a SwiftUI interface built for macOS 26 and later
 [NetScannerDesktop](https://github.com/Criseda/NetScannerDesktop) for
 Windows.
 
+## Install
+
+With [Homebrew](https://brew.sh):
+
+```sh
+brew install --cask criseda/tap/netscanner-app
+```
+
+Or download `NetScanner-<version>.zip` from
+[Releases](https://github.com/Criseda/NetScanner-MacOS/releases). The
+app is not notarized by Apple yet, so macOS blocks the first launch:
+open it once, then choose **Open Anyway** in System Settings ▸ Privacy
+& Security.
+
+The `ns` command-line scanner is in the same tap:
+`brew install criseda/tap/netscanner`.
+
 ## Features
 
 - **Discovery**: TCP, mDNS, SSDP and ARP discovery of a subnet (or ICMP

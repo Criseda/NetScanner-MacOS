@@ -22,3 +22,6 @@ First version of the native macOS app:
   engine but not from the app, so the app reads it and hands it to the
   engine (`--neighbor-table=parent`).
 - Bundles NetScanner v1.7.0 as a universal binary.
+- Released as `NetScanner-<version>.zip` on GitHub and as the
+  `netscanner-app` cask in `criseda/tap` for Homebrew. Not notarized
+  yet, so macOS asks to allow the first launch.

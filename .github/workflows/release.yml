@@ -1,0 +1,70 @@
+# Publishes a GitHub release when a version tag (v0.1.0, ...) is pushed:
+# the ad-hoc signed app as NetScanner-<version>.zip, with that version's
+# CHANGELOG section as the notes. The Homebrew cask in
+# Criseda/homebrew-tap points at this zip; bump its version and sha256
+# (printed in the job log and the release notes) after each release.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: release
+    runs-on: macos-26
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+
+      # The tag must name the version the app reports, and the CHANGELOG
+      # must have a section for it, or the release would mislead.
+      - name: Check the tag against the version and CHANGELOG
+        id: version
+        run: |
+          version="$(sed -n 's/^[[:space:]]*MARKETING_VERSION[[:space:]]*=[[:space:]]*\([^[:space:]]*\).*/\1/p' Config/Version.xcconfig)"
+          if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match MARKETING_VERSION $version"
+            exit 1
+          fi
+          awk -v heading="## $version" '
+            $0 == heading { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [[ ! -s release-notes.md ]]; then
+            echo "::error::CHANGELOG.md has no \"## $version\" section"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Run NetScannerKit tests
+        run: swift test --package-path Packages/NetScannerKit
+
+      - name: Fetch the scan engine
+        run: Scripts/fetch-engine.sh
+
+      - name: Build and package the app
+        id: package
+        run: |
+          output="$(Scripts/package-release.sh)"
+          echo "$output"
+          echo "zip=$(echo "$output" | tail -n 2 | head -n 1)" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(echo "$output" | tail -n 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ZIP: ${{ steps.package.outputs.zip }}
+          SHA256: ${{ steps.package.outputs.sha256 }}
+        run: |
+          {
+            echo
+            echo "SHA-256 of \`$(basename "$ZIP")\`: \`$SHA256\`"
+          } >> release-notes.md
+          gh release create "$GITHUB_REF_NAME" "$ZIP" \
+            --title "NetScanner for macOS ${{ steps.version.outputs.version }}" \
+            --notes-file release-notes.md
