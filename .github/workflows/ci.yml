@@ -1,0 +1,51 @@
+# NetScanner for macOS CI: package tests plus an app build, on every
+# push to main and every pull request. The ruleset on main requires the
+# "test-and-build" job to pass before a pull request can merge.
+#
+# Scanning itself is not exercised: runners have no LAN worth scanning,
+# and the engine has its own CI in Criseda/NetScanner.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Checkout and build only; no GitHub API access needed.
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    name: test-and-build
+    # macOS 26 SDK or newer: the app uses Liquid Glass APIs.
+    runs-on: macos-26
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+
+      - name: Show the toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Run NetScannerKit tests
+        run: swift test --package-path Packages/NetScannerKit
+
+      # Same script as a local build: the pinned, checksum-verified engine.
+      - name: Fetch the scan engine
+        run: Scripts/fetch-engine.sh
+
+      - name: Build the app (Debug and Release)
+        run: |
+          for configuration in Debug Release; do
+            xcodebuild build \
+              -project NetScanner.xcodeproj \
+              -scheme NetScanner \
+              -configuration "$configuration" \
+              -derivedDataPath build/DerivedData \
+              CODE_SIGNING_ALLOWED=NO
+          done

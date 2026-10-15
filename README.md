@@ -1,5 +1,10 @@
 # NetScanner for macOS
 
+[![CI](https://github.com/Criseda/NetScanner-MacOS/actions/workflows/ci.yml/badge.svg)](https://github.com/Criseda/NetScanner-MacOS/actions/workflows/ci.yml)
+![macOS](https://img.shields.io/badge/macOS-26%2B-blue)
+![Swift](https://img.shields.io/badge/Swift-6-orange?logo=swift)
+![License](https://img.shields.io/badge/License-GNU%20GPL--3.0-green)
+
 A native macOS app for [NetScanner](https://github.com/Criseda/NetScanner),
 the fast LAN scanner. Find every device on your network, then see which
 services each one offers. No administrator rights needed.
