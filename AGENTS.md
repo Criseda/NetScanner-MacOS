@@ -87,8 +87,8 @@ to try an unreleased engine.
     LaunchServices started can read it; a non-Apple binary between the
     app and `ns` hides it again.
 
-  So discovery scans run `ns` with `--neighbor-table=parent` (the first
-  engine release after v1.6.0; see "Neighbor table from the parent" in NetScanner's
+  So discovery scans run `ns` with `--neighbor-table=parent` (engine
+  v1.7.0 and later; see "Neighbor table from the parent" in NetScanner's
   `docs/README.md`). Each time `ns` needs the table it prints
   `{"type":"neighbors_request","id":N}` and waits up to 2 seconds for
   one line on stdin. `EngineRun` answers from the stdout handler (off
